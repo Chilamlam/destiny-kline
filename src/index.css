@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #f7f3e8;
+    color: #2c2523;
+    font-family: "Noto Serif SC", "Songti SC", "STSong", "Source Han Serif CN", SimSun, serif;
+    background-image: 
+      radial-gradient(#d5c3aa 0.75px, transparent 0.75px),
+      radial-gradient(#d5c3aa 0.75px, #f7f3e8 0.75px);
+    background-size: 30px 30px;
+    background-position: 0 0, 15px 15px;
+  }
+}
+
+/* Classical Chinese paper texture and borders */
+.parchment-card {
+  background: #fbf8f1;
+  border: 1px solid #dfd3c1;
+  box-shadow: 0 2px 8px rgba(92, 70, 48, 0.05), inset 0 0 20px rgba(220, 205, 180, 0.15);
+}
+
+.parchment-border {
+  border-color: #dfd3c1;
+}
+
+.chinese-stamp {
+  font-family: "Ma Shan Zheng", "Noto Serif SC", serif;
+  border: 1.5px solid #a22d1b;
+  color: #a22d1b;
+  padding: 1px 4px;
+  border-radius: 2px;
+  display: inline-block;
+  line-height: 1.2;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #efe6d5;
+}
+::-webkit-scrollbar-thumb {
+  background: #c2a57e;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a88960;
+}
