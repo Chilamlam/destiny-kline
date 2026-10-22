@@ -112,6 +112,20 @@ export const ZHI_HE: Record<string, string> = {
   '午': '未', '未': '午'
 };
 
+// 天干相冲 (克且同性)
+export const GAN_CHONG: Record<string, string> = {
+  '甲': '庚', '庚': '甲',
+  '乙': '辛', '辛': '乙',
+  '丙': '壬', '壬': '丙',
+  '丁': '癸', '癸': '丁'
+};
+
+// 伪随机确定性哈希函数 (保证同一命造计算绝对确定一致，无 Math.random 漂移)
+function deterministicPseudoRandom(seed: number): number {
+  const x = Math.sin(seed * 9999.1337 + 0.12345) * 10000;
+  return x - Math.floor(x);
+}
+
 // 计算八字排盘
 export function calculateBaziChart(input: BirthInput): BaziChart {
   let solar: any;
@@ -155,7 +169,7 @@ export function calculateBaziChart(input: BirthInput): BaziChart {
   const dayPillar = makePillar(dayGan, dayZhi);
   const hourPillar = makePillar(hourGan, hourZhi);
 
-  // 统计五行数量 (干+支+主要藏干)
+  // 统计五行数量
   const wuXingCount = { jin: 0, mu: 0, shui: 0, huo: 0, tu: 0 };
   const allWx = [
     yearPillar.wuXingGan, yearPillar.wuXingZhi,
@@ -172,7 +186,6 @@ export function calculateBaziChart(input: BirthInput): BaziChart {
   });
 
   const dayWx = GAN_WUXING[dayGan];
-  // 简易判断身旺身弱：看月令生助 + 同党(印比)得分
   const yueLingWx = ZHI_WUXING[monthZhi];
   const sameAndParentWx: Record<string, string[]> = {
     '木': ['木', '水'],
@@ -183,7 +196,7 @@ export function calculateBaziChart(input: BirthInput): BaziChart {
   };
   const supportElements = sameAndParentWx[dayWx];
   let strengthScore = 0;
-  if (supportElements.includes(yueLingWx)) strengthScore += 40; // 月令得令占40分
+  if (supportElements.includes(yueLingWx)) strengthScore += 45; // 得令
   allWx.forEach(wx => {
     if (supportElements.includes(wx)) strengthScore += 10;
   });
@@ -202,11 +215,11 @@ export function calculateBaziChart(input: BirthInput): BaziChart {
 
   if (strengthScore >= 65) {
     dayMasterStrength = strengthScore > 85 ? '专旺' : '身强';
-    xiYongShen = opposites[dayWx]; // 身强喜克耗泄
+    xiYongShen = opposites[dayWx]; // 身强喜财官食伤
     jiShen = supportElements;
-  } else if (strengthScore <= 35) {
+  } else if (strengthScore <= 38) {
     dayMasterStrength = strengthScore < 20 ? '从格' : '身弱';
-    xiYongShen = supportElements; // 身弱喜生扶
+    xiYongShen = supportElements; // 身弱喜印比扶身
     jiShen = opposites[dayWx];
   } else {
     dayMasterStrength = '中和平衡';
@@ -265,36 +278,80 @@ export function calculateBaziChart(input: BirthInput): BaziChart {
 
 // 神煞与流年特殊事件判定库
 const AUSPICIOUS_WORDS = [
-  '紫气东来，名利双收', '天乙贵人显耀，逢凶化吉', '财帛丰盈，投资得利', '正官掌印，考擢升迁',
-  '红鸾星动，得遇良缘', '驿马带财，远行有大获', '文昌照命，考学拔萃', '三合贵局，合作共赢',
-  '金匮储祥，添丁进财', '化权得禄，声威大震'
+  '紫气东来，名利双收，诸事顺遂',
+  '天乙贵人显耀，逢凶化吉，有开疆拓土之功',
+  '财帛丰盈，投资大获，得贵人大力扶持',
+  '官禄高升，声名鹊起，建功立业正当时',
+  '红鸾星动，得遇良缘，吉庆临门',
+  '食伤生财，灵感泉涌，事业实现跨越式突破',
+  '文昌照命，智慧通达，登峰造极',
+  '三合贵局，强强联手，格局宏阔大成'
 ];
 
 const INAUSPICIOUS_WORDS = [
-  '子午相冲，心神略有动荡', '岁运微克，注意健康劳累', '比劫夺财，防合伙有失', '伏吟阻滞，行事宜守旧',
-  '枭神夺食，防口舌是非', '刑冲并见，外出慎防火盗', '天克地冲，家庭事多烦扰', '羊刃悬针，作息规律免恙'
+  '岁运天克地冲，风浪险恶，宜收缩自保避锐气',
+  '七杀攻身，阻滞重重，谨防小人陷害与健康有恙',
+  '比劫夺财，防投资暴雷与合伙生变，切忌冒进',
+  '日支逢冲，动荡漂泊，情志心神倍受煎熬',
+  '枭神夺食，福气受损，当防意外倾覆与口舌之争',
+  '羊刃破局，刚极易折，宜守不宜攻，戒急用忍'
 ];
 
 const TURNING_WORDS = [
-  '大运交接，人生重大转折', '换柱革新，开启十年新局', '立界定鼎，事业航道跃升', '运移星转，换发崭新气象'
+  '大运交接，人生重大转折，破茧重生之年',
+  '换柱革新，运势乾坤倒转，开启全新十年征程',
+  '触底反弹，否极泰来，暗夜尽处见曙光',
+  '大势换挡，乘风破浪，重塑航向'
 ];
 
-// 计算五维运势分数与K线形态
+// 计算大运自身的宏观能量势能 (-25 ~ +25)
+function evaluateDaYunTrendBias(dy: DaYunItem, bazi: BaziChart): number {
+  const dyGan = dy.ganZhi[0];
+  const dyZhi = dy.ganZhi[1];
+  const dyGanWx = GAN_WUXING[dyGan];
+  const dyZhiWx = ZHI_WUXING[dyZhi];
+
+  let bias = 0;
+  // 天干得用
+  if (bazi.xiYongShen.includes(dyGanWx)) bias += 10;
+  if (bazi.jiShen.includes(dyGanWx)) bias -= 10;
+  // 地支为大运主令，分量更重 (占60%)
+  if (bazi.xiYongShen.includes(dyZhiWx)) bias += 16;
+  if (bazi.jiShen.includes(dyZhiWx)) bias -= 16;
+
+  // 大运地支冲日支 (夫妻宫逢冲，动荡)
+  if (ZHI_CHONG[dyZhi] === bazi.dayPillar.zhi) bias -= 8;
+  // 大运地支合日支 (六合大吉)
+  if (ZHI_HE[dyZhi] === bazi.dayPillar.zhi) bias += 8;
+
+  return bias;
+}
+
+// 核心重构：真正具备“金融波浪形态 + 命理大运周期 + 趋势动能”的K线生成引擎
 export function generateYearKlines(bazi: BaziChart, birthYear: number, maxAge: number = 85): KlineBar[] {
-  const currentYear = new Date().getFullYear();
+  const currentYear = 2026;
   const bars: KlineBar[] = [];
 
-  // 基础命格底分 (60 ~ 72 之间)
-  let baseNatalScore = 65;
-  if (bazi.dayMasterStrength === '中和平衡') baseNatalScore = 68;
-  if (bazi.dayMasterStrength === '专旺') baseNatalScore = 72;
+  // 1. 先计算每步大运的宏观基调
+  const daYunBiasMap = new Map<number, number>();
+  bazi.daYun.forEach(dy => {
+    daYunBiasMap.set(dy.index, evaluateDaYunTrendBias(dy, bazi));
+  });
 
-  let lastClose = baseNatalScore;
-
-  // 找出某一岁对应的大运
   const getDaYunForAge = (age: number): DaYunItem | undefined => {
     return bazi.daYun.find(dy => age >= dy.startAge && age <= dy.endAge) || bazi.daYun[0];
   };
+
+  // 基础底仓分数 (60分中枢)
+  let currentMomentumScore = 60;
+  // 童年起点
+  if (bazi.dayMasterStrength === '身强' || bazi.dayMasterStrength === '专旺') {
+    currentMomentumScore = 63;
+  } else if (bazi.dayMasterStrength === '身弱' || bazi.dayMasterStrength === '从格') {
+    currentMomentumScore = 56;
+  }
+
+  let lastClose = currentMomentumScore;
 
   for (let age = 0; age <= maxAge; age++) {
     const year = birthYear + age;
@@ -308,147 +365,199 @@ export function generateYearKlines(bazi: BaziChart, birthYear: number, maxAge: n
     const liuNianZhi = liuNianGanZhi[1];
 
     const currentDaYun = getDaYunForAge(age);
-    const daYunName = currentDaYun ? `${currentDaYun.ganZhi}运·${currentDaYun.shiShen}` : '童限运';
+    const daYunName = currentDaYun ? `${currentDaYun.ganZhi}运·${currentDaYun.shiShen}` : '幼童少运';
+    const daYunBias = currentDaYun ? (daYunBiasMap.get(currentDaYun.index) || 0) : 0;
 
-    // 1. 五行生克评分 (+-15分)
+    // 2. 流年岁君对本命与大运的生克势能 (Delta: -28 ~ +28)
     const lnGanWx = GAN_WUXING[liuNianGan];
     const lnZhiWx = ZHI_WUXING[liuNianZhi];
-    let scoreDelta = 0;
+    let yearImpulse = 0;
 
-    if (bazi.xiYongShen.includes(lnGanWx)) scoreDelta += 6;
-    if (bazi.xiYongShen.includes(lnZhiWx)) scoreDelta += 8;
-    if (bazi.jiShen.includes(lnGanWx)) scoreDelta -= 6;
-    if (bazi.jiShen.includes(lnZhiWx)) scoreDelta -= 8;
+    // 喜忌神直接影响
+    if (bazi.xiYongShen.includes(lnGanWx)) yearImpulse += 7;
+    if (bazi.xiYongShen.includes(lnZhiWx)) yearImpulse += 10;
+    if (bazi.jiShen.includes(lnGanWx)) yearImpulse -= 7;
+    if (bazi.jiShen.includes(lnZhiWx)) yearImpulse -= 10;
 
-    // 2. 刑冲克害
     const stars: string[] = [];
     const interrelations: string[] = [];
     const events: DestinyEvent[] = [];
 
-    // 冲日支
-    if (ZHI_CHONG[liuNianZhi] === bazi.dayPillar.zhi) {
-      scoreDelta -= 7;
-      interrelations.push(`日柱逢冲(${bazi.dayPillar.zhi}${liuNianZhi}相冲)`);
+    // 天克地冲 (大凶破位，如乙酉见辛卯)
+    const isGanChong = GAN_CHONG[liuNianGan] === bazi.dayPillar.gan;
+    const isZhiChong = ZHI_CHONG[liuNianZhi] === bazi.dayPillar.zhi;
+    if (isGanChong && isZhiChong) {
+      yearImpulse -= 18;
+      interrelations.push(`岁运天克地冲(${liuNianGanZhi}与日柱相克冲)`);
       events.push({
         type: 'inauspicious',
-        title: '冲动日支',
-        desc: '感情或居所易有变动，宜心平气和，以静制动。'
+        title: '天克地冲 · 剧烈破位',
+        desc: '流年与日元干支双冲，为人生重大关卡考验，务须韬光养晦，防重大变故。'
+      });
+    } else if (isZhiChong) {
+      yearImpulse -= 11;
+      interrelations.push(`日支逢冲(${bazi.dayPillar.zhi}${liuNianZhi}相冲)`);
+      events.push({
+        type: 'inauspicious',
+        title: '冲动夫妻宫 · 波折起伏',
+        desc: '地支相冲，根基动摇，事业或家庭易生波折变迁，心力交瘁。'
       });
     }
 
-    // 合日支
-    if (ZHI_HE[liuNianZhi] === bazi.dayPillar.zhi) {
-      scoreDelta += 6;
-      interrelations.push(`天作之合(${bazi.dayPillar.zhi}${liuNianZhi}六合)`);
+    // 天合地合 (大吉之年，如甲子见己丑)
+    const isGanHe = (
+      (liuNianGan === '甲' && bazi.dayPillar.gan === '己') || (liuNianGan === '己' && bazi.dayPillar.gan === '甲') ||
+      (liuNianGan === '乙' && bazi.dayPillar.gan === '庚') || (liuNianGan === '庚' && bazi.dayPillar.gan === '乙') ||
+      (liuNianGan === '丙' && bazi.dayPillar.gan === '辛') || (liuNianGan === '辛' && bazi.dayPillar.gan === '丙') ||
+      (liuNianGan === '丁' && bazi.dayPillar.gan === '壬') || (liuNianGan === '壬' && bazi.dayPillar.gan === '丁') ||
+      (liuNianGan === '戊' && bazi.dayPillar.gan === '癸') || (liuNianGan === '癸' && bazi.dayPillar.gan === '戊')
+    );
+    const isZhiHe = ZHI_HE[liuNianZhi] === bazi.dayPillar.zhi;
+    if (isGanHe && isZhiHe) {
+      yearImpulse += 18;
+      interrelations.push(`天地鸳鸯相合(${liuNianGanZhi}合日柱)`);
       events.push({
         type: 'auspicious',
-        title: '太岁来合',
-        desc: '贵人近身，凡事暗有护佑，结识良朋益友。'
+        title: '天合地合 · 贵人登堂',
+        desc: '得天地气运深厚护佑，声威骤起，遇至重转机或大获全胜。'
+      });
+    } else if (isZhiHe) {
+      yearImpulse += 8;
+      interrelations.push(`地支六合(${bazi.dayPillar.zhi}${liuNianZhi}合)`);
+      events.push({
+        type: 'auspicious',
+        title: '岁支相合 · 遇合顺遂',
+        desc: '凡事暗有贵人相帮，合力开拓，财官双美。'
       });
     }
 
-    // 换大运枢纽年
+    // 换大运枢纽年 (往往形成头部见顶或底部V反转)
     const isDaYunTransition = currentDaYun && (age === currentDaYun.startAge || age === currentDaYun.startAge + 1);
     if (isDaYunTransition) {
       events.push({
         type: 'turning',
-        title: '交运之期',
-        desc: `正值转入【${currentDaYun.ganZhi}】大运，行年新气象，人生重要枢纽。`
+        title: '大运换挡 · 枢纽变局',
+        desc: `正式迈入十年【${currentDaYun.ganZhi}】新运，气象骤换，人生航向发生巨变。`
       });
     }
 
-    // 岁运并临 (流年与大运干支相同)
+    // 岁运并临
     if (currentDaYun && currentDaYun.ganZhi === liuNianGanZhi) {
       stars.push('岁运并临');
-      events.push({
-        type: 'turning',
-        title: '岁运并临',
-        desc: '吉凶力道加倍，若逢喜用则百尺竿头，若逢忌神宜谨言慎行。'
-      });
+      if (daYunBias >= 0) {
+        yearImpulse += 12;
+        events.push({
+          type: 'turning',
+          title: '岁运并临 · 吉神倍增',
+          desc: '岁运重叠且逢喜神，乘风破浪直上九霄，为人生罕见之大飞跃！'
+        });
+      } else {
+        yearImpulse -= 14;
+        events.push({
+          type: 'inauspicious',
+          title: '岁运并临 · 忌神重叠',
+          desc: '岁运并临兼逢忌煞，压力倍增，切戒盲目扩张，当谨守以待时。'
+        });
+      }
     }
 
-    // 神煞检测 (简易贵人)
+    // 贵人神煞
     if (['甲', '戊', '庚'].includes(bazi.dayMaster) && ['丑', '未'].includes(liuNianZhi)) {
       stars.push('天乙贵人');
     } else if (['乙', '己'].includes(bazi.dayMaster) && ['子', '申'].includes(liuNianZhi)) {
       stars.push('天乙贵人');
     } else if (['丙', '丁'].includes(bazi.dayMaster) && ['亥', '酉'].includes(liuNianZhi)) {
       stars.push('天乙贵人');
+    } else if (['壬', '癸'].includes(bazi.dayMaster) && ['巳', '卯'].includes(liuNianZhi)) {
+      stars.push('天乙贵人');
     }
 
     if (stars.includes('天乙贵人')) {
-      scoreDelta += 5;
+      yearImpulse += 7;
       events.push({
         type: 'auspicious',
-        title: '贵人拱照',
-        desc: '得长辈领导指引或遇关键助力，化险为夷。'
+        title: '天乙拱照',
+        desc: '逢凶化吉，官贵引荐，危难之际常获意想不到之转机。'
       });
     }
 
-    // 计算各维度分数
-    // 综合基础目标分 (在 35 ~ 92 之间浮动)
-    const targetScore = Math.max(38, Math.min(92, baseNatalScore + scoreDelta + (Math.sin(age * 0.7) * 4)));
+    // 3. 金融级动量推进算法 (真正产生大牛市、深熊市与清晰周期趋势)
+    // 目标运势重心由【大运中枢】+【流年冲力】+【生命周期自然曲率】共同决定
+    const daYunTarget = 60 + daYunBias; // 好大运中枢拉升到 75~85，差大运中枢压低到 38~50
+    const rawTarget = daYunTarget + yearImpulse * 0.8;
     
-    // K线形态模拟：开盘在去年收盘附近微跳空
-    const open = Math.round((lastClose + (Math.random() * 4 - 2)) * 10) / 10;
-    const close = Math.round((targetScore + (Math.random() * 3 - 1.5)) * 10) / 10;
+    // 趋势平滑驱动：70% 沿袭惯性，30% 向目标加速（产生平滑而有力量的单边牛熊趋势！）
+    const targetClose = lastClose * 0.55 + rawTarget * 0.45;
     
-    // 波动性：冲合多、换大运时震荡幅度大
-    const volatility = (isDaYunTransition ? 6 : 3) + Math.abs(scoreDelta * 0.4);
-    const high = Math.round((Math.max(open, close) + Math.random() * volatility) * 10) / 10;
-    const low = Math.round((Math.min(open, close) - Math.random() * volatility) * 10) / 10;
+    // 确定性微扰动 (伪随机，保证绝对一致又自然)
+    const seed = year * 17 + age * 31;
+    const pr1 = (deterministicPseudoRandom(seed) - 0.5) * 2; // -1 ~ 1
+    const pr2 = (deterministicPseudoRandom(seed + 101) - 0.5) * 2;
+
+    // 规范在 28 ~ 95 的大区间
+    const close = Math.round(Math.max(28, Math.min(95, targetClose + pr1 * 2)) * 10) / 10;
     
+    // 开盘价承接上年收盘价，加上由于跨年岁气转换的微幅跳空
+    const gap = Math.round((pr2 * 2.5) * 10) / 10;
+    const open = Math.round(Math.max(28, Math.min(95, lastClose + gap)) * 10) / 10;
+
+    // 影线高低点：大冲突/转折年影线长，平稳年影线短
+    const baseWick = 1.5 + Math.abs(yearImpulse) * 0.35 + (isDaYunTransition ? 4 : 0);
+    const highWick = Math.abs(pr1) * baseWick + (close > open ? 1.5 : 0.5);
+    const lowWick = Math.abs(pr2) * baseWick + (close < open ? 1.5 : 0.5);
+
+    const high = Math.round((Math.max(open, close) + highWick) * 10) / 10;
+    const low = Math.round((Math.min(open, close) - lowWick) * 10) / 10;
+
+    // 更新惯性记忆
     lastClose = close;
 
-    // 事件量 (Volume): 波动越大事件量越高
-    const volume = Math.round(Math.abs(high - low) * 8 + Math.abs(scoreDelta) * 5 + 15);
+    // 事件量 (Volume): 冲克大、换大运、暴涨暴跌年份成交量激增
+    const volume = Math.round(Math.abs(high - low) * 9 + Math.abs(yearImpulse) * 6 + 12);
 
-    // 细分四维计算 (财、官、情、康)
-    const dimScore = (bias: number) => {
-      const dTarget = Math.max(30, Math.min(96, targetScore + bias));
-      const dOpen = Math.round((open + bias * 0.5) * 10) / 10;
-      const dClose = Math.round(dTarget * 10) / 10;
-      const dHigh = Math.round((Math.max(dOpen, dClose) + Math.random() * 3) * 10) / 10;
-      const dLow = Math.round((Math.min(dOpen, dClose) - Math.random() * 3) * 10) / 10;
-      return { open: dOpen, close: dClose, low: dLow, high: dHigh, score: dClose };
-    };
-
-    // 财富：若流年透财星或食伤生财
+    // 4. 四大细分维度 (财、官、情、康)
     const shiShen = getShiShen(bazi.dayMaster, liuNianGan);
     let wealthBias = 0;
     let careerBias = 0;
     let romanceBias = 0;
     let healthBias = 0;
 
-    if (['正财', '偏财'].includes(shiShen)) wealthBias += 8;
-    if (['食神', '伤官'].includes(shiShen)) { wealthBias += 5; careerBias += 4; }
-    if (['正官', '七杀'].includes(shiShen)) careerBias += 9;
-    if (['正印', '偏印'].includes(shiShen)) { careerBias += 6; healthBias += 4; }
-    if (['比肩', '劫财'].includes(shiShen)) { wealthBias -= 6; careerBias += 3; }
-    if (['红鸾', '天喜'].some(s => stars.includes(s)) || ['正财', '偏财', '正官', '七杀'].includes(shiShen)) romanceBias += 7;
+    if (['正财', '偏财'].includes(shiShen)) wealthBias += 10;
+    if (['食神', '伤官'].includes(shiShen)) { wealthBias += 6; careerBias += 5; }
+    if (['正官', '七杀'].includes(shiShen)) careerBias += 12;
+    if (['正印', '偏印'].includes(shiShen)) { careerBias += 7; healthBias += 5; }
+    if (['比肩', '劫财'].includes(shiShen)) { wealthBias -= 8; careerBias += 4; }
+    if (['红鸾', '天喜'].some(s => stars.includes(s)) || ['正财', '偏财', '正官', '七杀'].includes(shiShen)) romanceBias += 9;
+
+    const makeDimScores = (bias: number): FortuneScores => {
+      const dClose = Math.round(Math.max(25, Math.min(96, close + bias + pr1 * 1.5)) * 10) / 10;
+      const dOpen = Math.round(Math.max(25, Math.min(96, open + bias * 0.6)) * 10) / 10;
+      const dHigh = Math.round((Math.max(dOpen, dClose) + Math.abs(pr1) * 2.5) * 10) / 10;
+      const dLow = Math.round((Math.min(dOpen, dClose) - Math.abs(pr2) * 2.5) * 10) / 10;
+      return { open: dOpen, close: dClose, low: dLow, high: dHigh, score: dClose };
+    };
 
     const dimensions: Record<FortuneDimension, FortuneScores> = {
       overall: { open, close, low, high, score: close },
-      wealth: dimScore(wealthBias),
-      career: dimScore(careerBias),
-      romance: dimScore(romanceBias),
-      health: dimScore(healthBias - (age > 60 ? (age - 60) * 0.4 : 0)),
+      wealth: makeDimScores(wealthBias),
+      career: makeDimScores(careerBias),
+      romance: makeDimScores(romanceBias),
+      health: makeDimScores(healthBias - (age > 60 ? (age - 60) * 0.5 : 0)),
     };
 
-    // 命理原判金色虚线 (宏观生命周期平滑曲线：童年探索 -> 青年起步 -> 中年鼎盛 -> 晚年康宁)
-    const lifeCycleCurve = baseNatalScore + Math.sin((age - 15) / 25) * 8 + (currentDaYun ? (currentDaYun.index * 1.2) : 0);
-    const originalBaseline = Math.round(lifeCycleCurve * 10) / 10;
+    // 命理原判金色虚线 (大运宏观十年平滑中枢线)
+    const originalBaseline = Math.round(daYunTarget * 10) / 10;
 
     // 批语
     let summaryAdvice = '';
     if (close >= 75) {
-      summaryAdvice = AUSPICIOUS_WORDS[(age + year) % AUSPICIOUS_WORDS.length];
-    } else if (close <= 52) {
-      summaryAdvice = INAUSPICIOUS_WORDS[(age + year) % INAUSPICIOUS_WORDS.length];
+      summaryAdvice = AUSPICIOUS_WORDS[(year + age) % AUSPICIOUS_WORDS.length];
+    } else if (close <= 48) {
+      summaryAdvice = INAUSPICIOUS_WORDS[(year + age) % INAUSPICIOUS_WORDS.length];
     } else if (isDaYunTransition) {
-      summaryAdvice = TURNING_WORDS[(age + year) % TURNING_WORDS.length];
+      summaryAdvice = TURNING_WORDS[(year + age) % TURNING_WORDS.length];
     } else {
-      summaryAdvice = '循道而行，潜龙勿用，稳中有进，积厚流光。';
+      summaryAdvice = '循道而行，稳健持重，蓄势待发，静候时变。';
     }
 
     bars.push({
@@ -489,9 +598,9 @@ export function generateYearKlines(bazi: BaziChart, birthYear: number, maxAge: n
     const start10 = Math.max(0, i - 9);
     const sum10 = bars.slice(start10, i + 1).reduce((acc, b) => acc + b.close, 0);
     bars[i].ma10 = Math.round((sum10 / (i - start10 + 1)) * 10) / 10;
-    bars[i].ma1Year = bars[i].ma5; // 一年线取平滑中枢
+    bars[i].ma1Year = bars[i].ma5; // 一年线取 MA5 平滑中枢
 
-    // RSI 模拟
+    // RSI 真实相对强弱指数
     const rsiPeriod = 6;
     if (i >= rsiPeriod) {
       let gains = 0;
@@ -513,13 +622,10 @@ export function generateYearKlines(bazi: BaziChart, birthYear: number, maxAge: n
 
 // 生成选定年份的12个月流月K线 (月K·逐月)
 export function generateMonthKlines(bazi: BaziChart, targetYear: number, yearBar: KlineBar): KlineBar[] {
-  const currentYear = new Date().getFullYear();
+  const currentYear = 2026;
   const currentMonth = new Date().getMonth() + 1;
   const monthBars: KlineBar[] = [];
   
-  // 12节气流月干支 (以寅月开始为农历正月)
-  // 年干起月干口诀 (五虎遁):
-  // 甲己之年丙作首，乙庚之岁戊为头，丙辛之岁寻庚上，丁壬壬位顺水流，若问戊癸何处发，甲寅之上好追求。
   const yearGan = yearBar.ganZhi[0];
   const wuHuDunMap: Record<string, number> = {
     '甲': 2, '己': 2, // 丙
@@ -545,19 +651,23 @@ export function generateMonthKlines(bazi: BaziChart, targetYear: number, yearBar
     const mGanWx = GAN_WUXING[mGan];
     const mZhiWx = ZHI_WUXING[mZhi];
     let delta = 0;
-    if (bazi.xiYongShen.includes(mGanWx)) delta += 4;
-    if (bazi.xiYongShen.includes(mZhiWx)) delta += 5;
-    if (bazi.jiShen.includes(mGanWx)) delta -= 4;
-    if (bazi.jiShen.includes(mZhiWx)) delta -= 5;
+    if (bazi.xiYongShen.includes(mGanWx)) delta += 6;
+    if (bazi.xiYongShen.includes(mZhiWx)) delta += 8;
+    if (bazi.jiShen.includes(mGanWx)) delta -= 6;
+    if (bazi.jiShen.includes(mZhiWx)) delta -= 8;
 
-    const baseScore = Math.max(35, Math.min(95, yearBar.score + delta + (Math.sin(m * 0.8) * 5)));
-    const open = Math.round((lastMClose + (Math.random() * 2 - 1)) * 10) / 10;
-    const close = Math.round((baseScore + (Math.random() * 2 - 1)) * 10) / 10;
-    const high = Math.round((Math.max(open, close) + Math.random() * 3) * 10) / 10;
-    const low = Math.round((Math.min(open, close) - Math.random() * 3) * 10) / 10;
+    const seed = targetYear * 100 + m;
+    const pr1 = (deterministicPseudoRandom(seed) - 0.5) * 2;
+    const pr2 = (deterministicPseudoRandom(seed + 50) - 0.5) * 2;
+
+    const baseScore = Math.max(25, Math.min(96, yearBar.score + delta * 0.7));
+    const open = Math.round((lastMClose + pr1 * 1.5) * 10) / 10;
+    const close = Math.round((baseScore + pr2 * 1.5) * 10) / 10;
+    const high = Math.round((Math.max(open, close) + Math.abs(pr1) * 2 + 1) * 10) / 10;
+    const low = Math.round((Math.min(open, close) - Math.abs(pr2) * 2 - 1) * 10) / 10;
     lastMClose = close;
 
-    const volume = Math.round(Math.abs(high - low) * 6 + Math.abs(delta) * 4 + 10);
+    const volume = Math.round(Math.abs(high - low) * 7 + Math.abs(delta) * 5 + 10);
 
     const events: DestinyEvent[] = [];
     if (delta >= 6) {
@@ -579,7 +689,7 @@ export function generateMonthKlines(bazi: BaziChart, targetYear: number, yearBar
     if (ZHI_CHONG[mZhi] === bazi.dayPillar.zhi) stars.push('月冲日元');
 
     const dim = (bias: number) => {
-      const c = Math.max(30, Math.min(95, close + bias));
+      const c = Math.max(25, Math.min(96, close + bias));
       return { open: open + bias * 0.5, close: c, low: Math.min(open, c) - 2, high: Math.max(open, c) + 2, score: c };
     };
 
@@ -599,10 +709,10 @@ export function generateMonthKlines(bazi: BaziChart, targetYear: number, yearBar
       score: close,
       dimensions: {
         overall: { open, close, low, high, score: close },
-        wealth: dim(delta > 0 ? 4 : -3),
-        career: dim(delta > 0 ? 5 : -4),
-        romance: dim(delta > 0 ? 3 : -2),
-        health: dim(delta > 0 ? 2 : -3),
+        wealth: dim(delta > 0 ? 5 : -4),
+        career: dim(delta > 0 ? 6 : -5),
+        romance: dim(delta > 0 ? 4 : -3),
+        health: dim(delta > 0 ? 3 : -4),
       },
       ma5: close,
       ma10: close,

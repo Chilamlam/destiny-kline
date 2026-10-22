@@ -6,7 +6,7 @@ import { FutureProjectionView } from './components/FutureProjectionView';
 import { DimensionDetailView } from './components/DimensionDetailView';
 import { XijiView } from './components/XijiView';
 import { ChronicleView } from './components/ChronicleView';
-import { BirthInputModal } from './components/BirthInputModal';
+import { BirthInputModal, FAMOUS_PRESETS } from './components/BirthInputModal';
 import { SharePosterModal } from './components/SharePosterModal';
 import { BirthInput } from './types/destiny';
 import { calculateBaziChart, generateYearKlines } from './utils/baziEngine';
@@ -51,30 +51,59 @@ export const App: React.FC = () => {
 
       {/* 2. Main Content Container */}
       <main className="flex-1 max-w-[1440px] w-full mx-auto px-3 sm:px-6 py-4 space-y-4">
-        {/* Quick Info Ribbon */}
-        <div className="bg-[#fcfaf6] border border-[#dfd3c1] rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
-          <div className="flex items-center space-x-2">
-            <span className="chinese-stamp text-xs">命盘档案</span>
-            <span className="font-bold text-[#352b20]">{birthInput.name || '命主'}</span>
-            <span className="text-[#8c7a6b]">({birthInput.gender === 'male' ? '乾造·男' : '坤造·女'})</span>
-            <span className="text-[#8c7a6b] hidden sm:inline">| 出生公历: {baziChart.solarBirth}</span>
-            <span className="text-[#8c7a6b] hidden md:inline">| 农历: {baziChart.lunarBirth}</span>
+        {/* Quick Info & Celebrity Verification Ribbon */}
+        <div className="bg-[#fcfaf6] border border-[#dfd3c1] rounded-lg p-3 space-y-2.5 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center space-x-2">
+              <span className="chinese-stamp text-xs">命盘档案</span>
+              <span className="font-bold text-[#352b20] text-sm">{birthInput.name || '命主'}</span>
+              <span className="text-[#8c7a6b]">({birthInput.gender === 'male' ? '乾造·男' : '坤造·女'})</span>
+              <span className="text-[#8c7a6b] hidden sm:inline">| 出生公历: {baziChart.solarBirth}</span>
+              <span className="text-[#8c7a6b] hidden md:inline">| 农历: {baziChart.lunarBirth}</span>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setIsInputModalOpen(true)}
+                className="text-[#a22d1b] hover:underline font-medium flex items-center"
+              >
+                <span>自由排盘 / 输入生日</span>
+              </button>
+              <span className="text-[#d5be9e]">·</span>
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                className="text-[#544332] hover:text-[#c93f28] font-medium flex items-center"
+              >
+                <span>保存命盘海报</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setIsInputModalOpen(true)}
-              className="text-[#a22d1b] hover:underline font-medium flex items-center"
-            >
-              <span>更换生辰</span>
-            </button>
-            <span className="text-[#d5be9e]">·</span>
-            <button
-              onClick={() => setIsShareModalOpen(true)}
-              className="text-[#544332] hover:text-[#c93f28] font-medium flex items-center"
-            >
-              <span>保存命盘海报</span>
-            </button>
+          {/* Celebrity Quick Switcher */}
+          <div className="pt-2 border-t border-[#dfd3c1]/70 flex items-center flex-wrap gap-2 text-xs">
+            <span className="text-[#544332] font-semibold flex items-center">
+              <Sparkles className="w-3.5 h-3.5 mr-1 text-[#b8860b]" /> 名人验证快速载入:
+            </span>
+            {FAMOUS_PRESETS.map((p, idx) => {
+              const isActive = birthInput.name === p.name || birthInput.name === p.data.name;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setBirthInput(p.data)}
+                  className={`px-2.5 py-1 rounded text-xs transition font-serif flex items-center space-x-1 ${
+                    isActive
+                      ? 'bg-[#c93f28] text-white font-bold shadow-xs'
+                      : 'bg-[#efe6d5]/70 hover:bg-[#dfd3c1] text-[#544332] border border-[#d5be9e]'
+                  }`}
+                  title={p.desc + ' — ' + p.highlight}
+                >
+                  <span>{p.name}</span>
+                  <span className={`text-[10px] opacity-80 ${isActive ? 'text-white' : 'text-[#8c7a6b]'}`}>
+                    ({p.tag})
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
