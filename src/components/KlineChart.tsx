@@ -57,9 +57,11 @@ export const KlineChart: React.FC<KlineChartProps> = ({
     }
 
     if (filter.timeRange === 'recent') {
-      return yearBars.filter(b => b.year >= currentYear - 5 && b.year <= currentYear + 8);
+      const rec = yearBars.filter(b => b.year >= currentYear - 5 && b.year <= currentYear + 8);
+      return rec.length > 0 ? rec : yearBars.slice(Math.max(0, Math.min(20, yearBars.length - 16)), Math.min(yearBars.length, 36));
     } else if (filter.timeRange === 'projection') {
-      return yearBars.filter(b => b.year >= currentYear);
+      const proj = yearBars.filter(b => b.year >= currentYear);
+      return proj.length > 0 ? proj : yearBars.slice(Math.max(0, Math.floor(yearBars.length / 2)));
     }
     return yearBars;
   }, [isDrilldown, filter.selectedYearForMonthK, filter.timeRange, yearBars, bazi]);
@@ -290,8 +292,16 @@ export const KlineChart: React.FC<KlineChartProps> = ({
         {
           type: 'inside',
           xAxisIndex: [0, 1],
-          start: isDrilldown ? 0 : Math.max(0, ((currentYearIndex - 12) / currentBars.length) * 100),
-          end: isDrilldown ? 100 : Math.min(100, ((currentYearIndex + 14) / currentBars.length) * 100),
+          start: isDrilldown 
+            ? 0 
+            : currentYearIndex >= 0 
+            ? Math.max(0, ((currentYearIndex - 12) / Math.max(1, currentBars.length)) * 100) 
+            : 0,
+          end: isDrilldown 
+            ? 100 
+            : currentYearIndex >= 0 
+            ? Math.min(100, ((currentYearIndex + 14) / Math.max(1, currentBars.length)) * 100) 
+            : 100,
         },
         {
           show: false,

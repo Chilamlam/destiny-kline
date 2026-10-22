@@ -59,18 +59,37 @@ export const DimensionDetailView: React.FC<DimensionDetailViewProps> = ({
   yearBars,
 }) => {
   const currentYear = 2026;
-  const recentBars = yearBars.filter(b => b.year >= currentYear - 5 && b.year <= currentYear + 10);
+  
+  // Intelligent Focal Period:
+  // If the person lived / lives around 2026, show 2021-2035.
+  // If the person is historical (e.g. Zhang Ailing born 1920, Buffett born 1930),
+  // show their golden prime 18 years (e.g. ages 20 ~ 38, or middle span)
+  const matchingRecent = yearBars.filter(b => b.year >= currentYear - 5 && b.year <= currentYear + 10);
+  const displayBars = matchingRecent.length > 0 
+    ? matchingRecent 
+    : yearBars.slice(Math.max(0, Math.min(20, yearBars.length - 16)), Math.min(yearBars.length, 38));
+
+  // Safe fallback if bars array is still short
+  const safeBars = displayBars.length > 0 ? displayBars : yearBars.slice(0, 15);
+  const startYear = safeBars[0]?.year || 1990;
+  const endYear = safeBars[safeBars.length - 1]?.year || 2026;
+  const isHistorical = !safeBars.some(b => b.year === currentYear);
 
   return (
     <div className="space-y-6">
       <div className="parchment-card rounded-lg p-5">
-        <div className="flex items-center space-x-2 border-b border-[#dfd3c1] pb-3 mb-2">
-          <span className="chinese-stamp text-sm">细览</span>
-          <h3 className="text-xl font-bold font-serif text-[#352b20]">
-            四维运势细部剖析 (财·官·情·康)
-          </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#dfd3c1] gap-2">
+          <div className="flex items-center space-x-2">
+            <span className="chinese-stamp text-sm">细览</span>
+            <h3 className="text-xl font-bold font-serif text-[#352b20]">
+              四维运势细部剖析 (财·官·情·康)
+            </h3>
+          </div>
+          <div className="text-xs text-[#a22d1b] font-medium">
+            {isHistorical ? `展示聚焦期: ${startYear}年 - ${endYear}年 (黄金代表时期)` : `展示聚焦期: ${startYear}年 - ${endYear}年 (近年及未来)`}
+          </div>
         </div>
-        <p className="text-xs text-[#786b59]">
+        <p className="text-xs text-[#786b59] mt-2">
           分别针对财富、事业、情感与健康建立独立的十神量化模型，清晰洞见人生各维度的起伏消长。
         </p>
       </div>
@@ -78,13 +97,16 @@ export const DimensionDetailView: React.FC<DimensionDetailViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {DIMENSIONS.map((dim) => {
           const Icon = dim.icon;
-          // Calculate average score
-          const avgScore = Math.round(
-            recentBars.reduce((sum, b) => sum + b.dimensions[dim.id].score, 0) / recentBars.length
-          );
+          
+          // Safe average score
+          const avgScore = safeBars.length > 0
+            ? Math.round(safeBars.reduce((sum, b) => sum + (b.dimensions[dim.id]?.score || 60), 0) / safeBars.length)
+            : 60;
 
-          // Find highest year
-          const bestYear = [...recentBars].sort((a, b) => b.dimensions[dim.id].score - a.dimensions[dim.id].score)[0];
+          // Safe find highest year
+          const sorted = [...safeBars].sort((a, b) => (b.dimensions[dim.id]?.score || 0) - (a.dimensions[dim.id]?.score || 0));
+          const bestYear = sorted[0];
+          const bestScore = bestYear?.dimensions[dim.id]?.score || avgScore;
 
           return (
             <div key={dim.id} className="parchment-card rounded-lg p-5 flex flex-col justify-between">
@@ -100,7 +122,7 @@ export const DimensionDetailView: React.FC<DimensionDetailViewProps> = ({
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs text-[#8c7a6b]">近期均分</span>
+                    <span className="text-xs text-[#8c7a6b]">期内均分</span>
                     <div className="font-serif font-bold text-lg text-[#352b20]">{avgScore}</div>
                   </div>
                 </div>
@@ -108,15 +130,17 @@ export const DimensionDetailView: React.FC<DimensionDetailViewProps> = ({
                 {/* Sparkline Visual Simulation */}
                 <div className="py-4">
                   <div className="text-xs font-medium text-[#786b59] mb-2 flex justify-between">
-                    <span>近十五年走势折线</span>
-                    <span className="text-[#a22d1b]">
-                      最佳年景: {bestYear.year}年 ({bestYear.dimensions[dim.id].score}分)
-                    </span>
+                    <span>走势能量柱状谱</span>
+                    {bestYear && (
+                      <span className="text-[#a22d1b]">
+                        巅峰年景: {bestYear.year}年 ({bestScore}分)
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-end h-20 gap-1 bg-[#f5eedf]/50 p-2 rounded border border-[#dfd3c1]">
-                    {recentBars.map((b) => {
-                      const score = b.dimensions[dim.id].score;
-                      const heightPct = Math.max(15, Math.min(100, ((score - 30) / 65) * 100));
+                    {safeBars.map((b) => {
+                      const score = b.dimensions[dim.id]?.score || 50;
+                      const heightPct = Math.max(15, Math.min(100, ((score - 25) / 72) * 100));
                       const isNow = b.year === currentYear;
 
                       return (
@@ -136,16 +160,16 @@ export const DimensionDetailView: React.FC<DimensionDetailViewProps> = ({
                           />
                           {/* Tooltip on hover */}
                           <div className="absolute bottom-full mb-1 hidden group-hover:flex flex-col items-center bg-[#2c2523] text-white text-[10px] px-1.5 py-0.5 rounded shadow z-10 whitespace-nowrap pointer-events-none">
-                            <span>{b.year}年: {score}分</span>
+                            <span>{b.year}年({b.age}岁): {score}分</span>
                           </div>
                         </div>
                       );
                     })}
                   </div>
                   <div className="flex justify-between text-[10px] text-[#8c7a6b] mt-1 px-1">
-                    <span>{recentBars[0]?.year}</span>
-                    <span className="text-[#c93f28] font-bold">今·2026</span>
-                    <span>{recentBars[recentBars.length - 1]?.year}</span>
+                    <span>{startYear}年</span>
+                    {!isHistorical && <span className="text-[#c93f28] font-bold">今·2026</span>}
+                    <span>{endYear}年</span>
                   </div>
                 </div>
               </div>

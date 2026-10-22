@@ -12,34 +12,50 @@ export const FutureProjectionView: React.FC<FutureProjectionViewProps> = ({
   yearBars,
 }) => {
   const currentYear = 2026;
-  const futureBars = yearBars.filter(b => b.year >= currentYear).slice(0, 15);
+  const isLiving = yearBars.some(b => b.year >= currentYear);
+
+  // If living, show 2026~2040. If historical (e.g. Zhang Ailing born 1920), show late/prime stage (e.g. age 40~60)
+  const projectionBars = isLiving
+    ? yearBars.filter(b => b.year >= currentYear).slice(0, 15)
+    : yearBars.slice(Math.max(0, Math.min(35, yearBars.length - 16)), Math.min(yearBars.length, 55));
+
+  const safeBars = projectionBars.length > 0 ? projectionBars : yearBars.slice(-15);
+  const startYear = safeBars[0]?.year || 2026;
+  const endYear = safeBars[safeBars.length - 1]?.year || 2040;
 
   // Top 3 peak fortune years
-  const peakYears = [...futureBars].sort((a, b) => b.score - a.score).slice(0, 3);
+  const peakYears = [...safeBars].sort((a, b) => b.score - a.score).slice(0, 3);
   // Bottom 2 caution years
-  const cautionYears = [...futureBars].sort((a, b) => a.score - b.score).slice(0, 2);
+  const cautionYears = [...safeBars].sort((a, b) => a.score - b.score).slice(0, 2);
 
   return (
     <div className="space-y-6">
       {/* 1. Header Card */}
       <div className="parchment-card rounded-lg p-5">
-        <div className="flex items-center space-x-2 border-b border-[#dfd3c1] pb-3 mb-4">
-          <span className="chinese-stamp text-sm">推演</span>
-          <h3 className="text-xl font-bold font-serif text-[#352b20]">
-            未来十五年运势推演谱 (2026 - 2040)
-          </h3>
-          <span className="text-xs text-[#786b59] ml-2">
-            结合大运流年五行生克、神煞吉凶与天干地支刑冲破害
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#dfd3c1] gap-2">
+          <div className="flex items-center space-x-2">
+            <span className="chinese-stamp text-sm">推演</span>
+            <h3 className="text-xl font-bold font-serif text-[#352b20]">
+              {isLiving
+                ? `未来十五年运势推演谱 (${startYear} - ${endYear})`
+                : `命理阶段深度推演谱 (${startYear} - ${endYear}年 · ${safeBars[0]?.age || 40}至${safeBars[safeBars.length-1]?.age || 60}岁)`}
+            </h3>
+          </div>
+          <span className="text-xs text-[#a22d1b] font-medium">
+            {isLiving ? '前瞻推演' : '历法推演回溯'}
           </span>
         </div>
+        <p className="text-xs text-[#786b59] mt-2">
+          结合大运流年五行生克、神煞吉凶与天干地支刑冲破害，深度研判人生重大转折节律。
+        </p>
 
         {/* Highlight Summary Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {/* Golden Peak Fortune Years */}
           <div className="p-4 rounded-lg bg-[#f0f8f3] border border-[#b2dfdb]">
             <div className="flex items-center space-x-2 text-[#2e7d32] font-serif font-bold text-sm mb-2">
               <Award className="w-4 h-4" />
-              <span>未来运势高光黄金之岁 (宜乘胜出击)</span>
+              <span>推演运势高光黄金之岁 (乘胜出击)</span>
             </div>
             <div className="space-y-2">
               {peakYears.map((bar) => (
@@ -62,7 +78,7 @@ export const FutureProjectionView: React.FC<FutureProjectionViewProps> = ({
           <div className="p-4 rounded-lg bg-[#fef5f4] border border-[#ffcdd2]">
             <div className="flex items-center space-x-2 text-[#c62828] font-serif font-bold text-sm mb-2">
               <ShieldAlert className="w-4 h-4" />
-              <span>注意蛰伏潜修之岁 (宜守静防微)</span>
+              <span>推演潜伏蛰伏之岁 (守静防微)</span>
             </div>
             <div className="space-y-2">
               {cautionYears.map((bar) => (
@@ -85,9 +101,9 @@ export const FutureProjectionView: React.FC<FutureProjectionViewProps> = ({
 
       {/* 2. Chronological Future Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {futureBars.map((bar) => {
+        {safeBars.map((bar) => {
           const isHigh = bar.score >= 70;
-          const isLow = bar.score <= 52;
+          const isLow = bar.score <= 50;
 
           return (
             <div

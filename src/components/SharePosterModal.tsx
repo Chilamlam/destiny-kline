@@ -25,7 +25,8 @@ export const SharePosterModal: React.FC<SharePosterModalProps> = ({
   if (!isOpen) return null;
 
   const currentYear = 2026;
-  const currentBar = yearBars.find(b => b.year === currentYear) || yearBars[0];
+  const currentBar = yearBars.find(b => b.year === currentYear) || yearBars[Math.floor(yearBars.length / 2)] || yearBars[0];
+  const isHistorical = !yearBars.some(b => b.year === currentYear);
 
   const handleDownload = async () => {
     if (!posterRef.current) return;
@@ -135,7 +136,7 @@ export const SharePosterModal: React.FC<SharePosterModalProps> = ({
             {/* Current Fortune Snapshot */}
             <div className="p-3 bg-[#eef8f3] border border-[#a5d6a7] rounded text-xs space-y-1">
               <div className="flex justify-between items-center font-serif font-bold text-[#1b5e20]">
-                <span>当下时局 · 2026 丙午年</span>
+                <span>{isHistorical ? `焦点流年 · ${currentBar.year} ${currentBar.ganZhi}年` : `当下时局 · ${currentBar.year} ${currentBar.ganZhi}年`}</span>
                 <span>指数: {currentBar.score} 分</span>
               </div>
               <div className="text-[11px] text-[#558b2f]">
