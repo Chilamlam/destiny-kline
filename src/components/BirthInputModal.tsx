@@ -94,7 +94,7 @@ export const FAMOUS_PRESETS: Array<{
 ];
 
 const SHI_CHEN = [
-  { hour: 0, label: '子时 (23:00 - 01:00)' },
+  { hour: 0, label: '早子时 (00:00 - 01:00) · 午夜晨子' },
   { hour: 2, label: '丑时 (01:00 - 03:00)' },
   { hour: 4, label: '寅时 (03:00 - 05:00)' },
   { hour: 6, label: '卯时 (05:00 - 07:00)' },
@@ -106,6 +106,7 @@ const SHI_CHEN = [
   { hour: 18, label: '酉时 (17:00 - 19:00)' },
   { hour: 20, label: '戌时 (19:00 - 21:00)' },
   { hour: 22, label: '亥时 (21:00 - 23:00)' },
+  { hour: 23, label: '晚子时 / 夜子时 (23:00 - 24:00) · 深夜初更' },
 ];
 
 export const BirthInputModal: React.FC<BirthInputModalProps> = ({
@@ -313,9 +314,14 @@ export const BirthInputModal: React.FC<BirthInputModalProps> = ({
 
             {/* Hour (Shi Chen) */}
             <div>
-              <label className="block text-xs font-semibold text-[#544332] mb-1">
-                出生时辰 (二十四小时与十二时辰)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-[#544332]">
+                  出生时辰 (二十四小时与十二时辰)
+                </label>
+                <span className="text-[10px] text-[#a22d1b] font-medium">
+                  已细分早晚子时
+                </span>
+              </div>
               <select
                 value={formData.hour}
                 onChange={(e) => setFormData({ ...formData, hour: parseInt(e.target.value) })}
@@ -327,6 +333,49 @@ export const BirthInputModal: React.FC<BirthInputModalProps> = ({
                   </option>
                 ))}
               </select>
+
+              {/* 晚子时专属流派切换 */}
+              {formData.hour === 23 && (
+                <div className="mt-2.5 p-3 rounded bg-[#f5eedf]/90 border border-[#d5be9e] text-xs space-y-1.5 animate-fadeIn">
+                  <div className="font-semibold text-[#a22d1b]">
+                    晚子时 (23:00 - 24:00) 日柱干支取法流派：
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, ziShiSect: 2 })}
+                      className={`p-2 rounded border text-left transition ${
+                        (formData.ziShiSect ?? 2) === 2
+                          ? 'bg-[#c93f28] text-white border-[#c93f28] shadow-xs'
+                          : 'bg-white text-[#544332] border-[#d5be9e]'
+                      }`}
+                    >
+                      <div className="font-bold">晚子时日柱算当天 (推荐)</div>
+                      <div className={`text-[10px] mt-0.5 ${(formData.ziShiSect ?? 2) === 2 ? 'text-white/90' : 'text-[#8c7a6b]'}`}>
+                        现代主流 · 《子平真诠》依公历自然日归属
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, ziShiSect: 1 })}
+                      className={`p-2 rounded border text-left transition ${
+                        formData.ziShiSect === 1
+                          ? 'bg-[#c93f28] text-white border-[#c93f28] shadow-xs'
+                          : 'bg-white text-[#544332] border-[#d5be9e]'
+                      }`}
+                    >
+                      <div className="font-bold">晚子时日柱算次日</div>
+                      <div className={`text-[10px] mt-0.5 ${formData.ziShiSect === 1 ? 'text-white/90' : 'text-[#8c7a6b]'}`}>
+                        三命通会派 · 认为23点已交明日之子时初气
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-1.5 text-[11px] text-[#8c7a6b] leading-tight">
+                💡 <strong>命理考究</strong>：子时跨越两日（23:00-01:00）。23点前属亥时，23点至午夜为晚子时，午夜后为早子时，精准排定日夜交替干支。
+              </div>
             </div>
 
             {/* Action Footer */}

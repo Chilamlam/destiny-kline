@@ -19,7 +19,12 @@ export const BaziSummaryView: React.FC<BaziSummaryViewProps> = ({ bazi }) => {
     { title: '年柱 · 祖业根基', p: bazi.yearPillar },
     { title: '月柱 · 父母事业', p: bazi.monthPillar },
     { title: '日柱 · 命元夫妻', p: bazi.dayPillar, isDayMaster: true },
-    { title: '时柱 · 子女归宿', p: bazi.hourPillar },
+    { 
+      title: bazi.hourPillar.zhi === '子' 
+        ? (bazi.solarBirth.includes('晚子') ? '时柱 · 晚子时' : '时柱 · 早子时') 
+        : '时柱 · 子女归宿', 
+      p: bazi.hourPillar 
+    },
   ];
 
   const totalWxCount = Object.values(bazi.wuXingCount).reduce((a, b) => a + b, 0) || 1;

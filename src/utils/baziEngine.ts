@@ -138,6 +138,8 @@ export function calculateBaziChart(input: BirthInput): BaziChart {
 
   const lunar = solar.getLunar();
   const eightChar = lunar.getEightChar();
+  // 晚子时(23点)与早子时(0点)流派：默认使用 sect=2 (晚子时日柱算当天，符合大众历法直觉)
+  eightChar.setSect(input.ziShiSect ?? 2);
 
   const yearGan = eightChar.getYearGan();
   const yearZhi = eightChar.getYearZhi();
@@ -269,8 +271,8 @@ export function calculateBaziChart(input: BirthInput): BaziChart {
     xiYongShen,
     jiShen,
     zodiac: lunar.getYearShengXiao(),
-    solarBirth: `${solar.getYear()}年${solar.getMonth()}月${solar.getDay()}日 ${solar.getHour()}时`,
-    lunarBirth: `${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()} ${eightChar.getTimeZhi()}时`,
+    solarBirth: `${solar.getYear()}年${solar.getMonth()}月${solar.getDay()}日 ${input.hour === 23 ? '晚子时 (23:00-24:00)' : input.hour === 0 ? '早子时 (00:00-01:00)' : `${solar.getHour()}时`}`,
+    lunarBirth: `${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()} ${eightChar.getTimeZhi()}时${input.hour === 23 ? '(夜子)' : input.hour === 0 ? '(晨子)' : ''}`,
     daYun,
     startYunAge
   };

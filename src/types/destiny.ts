@@ -10,6 +10,7 @@ export interface BirthInput {
   day: number;
   hour: number;
   isLeapMonth?: boolean;
+  ziShiSect?: 1 | 2; // 1: 晚子时日柱算第二天(三命通会); 2: 晚子时日柱算当天(现代主流)
 }
 
 export type FortuneDimension = 'overall' | 'wealth' | 'career' | 'romance' | 'health';
