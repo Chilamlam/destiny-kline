@@ -10,7 +10,9 @@ import { BirthInputModal, FAMOUS_PRESETS } from './components/BirthInputModal';
 import { SharePosterModal } from './components/SharePosterModal';
 import { BirthInput } from './types/destiny';
 import { calculateBaziChart, generateYearKlines } from './utils/baziEngine';
-import { Sparkles, HelpCircle, Compass, Share2 } from 'lucide-react';
+import { calculateAstrologyProfile } from './utils/astrologyEngine';
+import { AstrologyView } from './components/AstrologyView';
+import { Sparkles, HelpCircle, Compass, Share2, Orbit } from 'lucide-react';
 
 export const App: React.FC = () => {
   // Default birth input
@@ -38,6 +40,11 @@ export const App: React.FC = () => {
     return generateYearKlines(baziChart, birthInput.year, 85);
   }, [baziChart, birthInput.year]);
 
+  // Compute Western Astrology Profile & Retrograde status
+  const astrologyProfile = useMemo(() => {
+    return calculateAstrologyProfile(birthInput);
+  }, [birthInput]);
+
   return (
     <div className="min-h-screen bg-[#f7f3e8] text-[#2c2523] flex flex-col font-serif selection:bg-[#c93f28]/20 selection:text-[#a22d1b]">
       {/* 1. Top Navigation Bar */}
@@ -59,7 +66,17 @@ export const App: React.FC = () => {
               <span className="font-bold text-[#352b20] text-sm">{birthInput.name || '命主'}</span>
               <span className="text-[#8c7a6b]">({birthInput.gender === 'male' ? '乾造·男' : '坤造·女'})</span>
               <span className="text-[#8c7a6b] hidden sm:inline">| 出生公历: {baziChart.solarBirth}</span>
-              <span className="text-[#8c7a6b] hidden md:inline">| 农历: {baziChart.lunarBirth}</span>
+              <span className="text-[#b8860b] font-medium hidden md:inline">
+                | 星座: {astrologyProfile.sunSign.symbol} {astrologyProfile.sunSign.name}
+              </span>
+              <button
+                onClick={() => setActiveTab('astrology')}
+                className="inline-flex items-center space-x-1 text-[11px] bg-[#fff0f0] hover:bg-[#ffe5e5] text-[#c93f28] border border-[#ef9a9a] px-2 py-0.5 rounded font-medium transition cursor-pointer"
+                title="查看当前水逆/金逆等天体行为及专属避坑指南"
+              >
+                <Orbit className="w-3 h-3 text-[#c93f28]" />
+                <span>天象逆行雷达</span>
+              </button>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -112,6 +129,13 @@ export const App: React.FC = () => {
           <KlineChart
             bazi={baziChart}
             yearBars={yearBars}
+          />
+        )}
+
+        {activeTab === 'astrology' && (
+          <AstrologyView
+            astro={astrologyProfile}
+            name={birthInput.name}
           />
         )}
 

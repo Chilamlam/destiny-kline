@@ -12,6 +12,7 @@ interface HeaderNavProps {
 
 export const TABS = [
   { id: 'summary', name: '运势总览' },
+  { id: 'astrology', name: '天象星盘' },
   { id: 'bazi', name: '盘势要诀' },
   { id: 'projection', name: '未来推演' },
   { id: 'dimension', name: '分部细览' },

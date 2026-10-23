@@ -121,3 +121,64 @@ export interface ChartFilterOptions {
   showRSI: boolean; // RSI
   selectedYearForMonthK: number; // 当前展开月K的年份 (如 2026)
 }
+
+// 星座与星相学相关类型
+export interface ZodiacSign {
+  name: string;
+  englishName: string;
+  symbol: string;
+  dates: string;
+  element: '火象' | '土象' | '风象' | '水象';
+  modality: '基本宫' | '固定宫' | '变动宫';
+  rulingPlanet: string;
+  keywords: string[];
+  personalityDesc: string;
+  fortuneVibe2026: string;
+}
+
+export type RetrogradePlanetType = 'mercury' | 'venus' | 'mars' | 'jupiter' | 'saturn';
+
+export interface RetrogradeEvent {
+  id: string;
+  planet: string; // '水星' | '金星' | '火星' 等
+  planetKey: RetrogradePlanetType;
+  title: string;
+  startDate: string;
+  endDate: string;
+  zodiacScope: string;
+  status: 'ongoing' | 'upcoming' | 'past';
+  daysDiff: number; // 距离开始或结束的天数
+  shadowPeriod: string;
+  impactKeywords: string[];
+  coreImpact: string;
+  generalAdvice: string;
+  heavyImpactSigns: string[]; // 重点影响星座
+  signSpecificImpact: string; // 针对当前命主星座的指引
+}
+
+export interface MoonPhaseEvent {
+  date: string;
+  title: string;
+  type: 'new_moon' | 'full_moon' | 'solar_eclipse' | 'lunar_eclipse';
+  sign: string;
+  energyTheme: string;
+  practicalAdvice: string;
+}
+
+export interface AstrologyProfile {
+  sunSign: ZodiacSign;
+  moonSignEstimate: string;
+  risingSignEstimate: string;
+  elementBreakdown: {
+    fire: number;
+    earth: number;
+    air: number;
+    water: number;
+  };
+  retrogrades: RetrogradeEvent[];
+  activeRetrogradesCount: number;
+  moonEvents: MoonPhaseEvent[];
+  mercuryRetrogradeAdvice: string;
+  venusRetrogradeAdvice: string;
+}
+
