@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Sparkles, BookOpen, Clock, User, Calendar } from 'lucide-react';
 import { BirthInput } from '../types/destiny';
 
@@ -93,20 +93,31 @@ export const FAMOUS_PRESETS: Array<{
   }
 ];
 
-const SHI_CHEN = [
-  { hour: 0, label: '早子时 (00:00 - 01:00) · 午夜晨子' },
-  { hour: 2, label: '丑时 (01:00 - 03:00)' },
-  { hour: 4, label: '寅时 (03:00 - 05:00)' },
-  { hour: 6, label: '卯时 (05:00 - 07:00)' },
-  { hour: 8, label: '辰时 (07:00 - 09:00)' },
-  { hour: 10, label: '巳时 (09:00 - 11:00)' },
-  { hour: 12, label: '午时 (11:00 - 13:00)' },
-  { hour: 14, label: '未时 (13:00 - 15:00)' },
-  { hour: 16, label: '申时 (15:00 - 17:00)' },
-  { hour: 18, label: '酉时 (17:00 - 19:00)' },
-  { hour: 20, label: '戌时 (19:00 - 21:00)' },
-  { hour: 22, label: '亥时 (21:00 - 23:00)' },
-  { hour: 23, label: '晚子时 / 夜子时 (23:00 - 24:00) · 深夜初更' },
+export const HOUR_OPTIONS = [
+  { hour: 0, label: '00:00 - 01:00 · 早子时 (午夜晨子)' },
+  { hour: 1, label: '01:00 - 02:00 · 丑时 (凌晨深眠)' },
+  { hour: 2, label: '02:00 - 03:00 · 丑时 (凌晨鸡鸣)' },
+  { hour: 3, label: '03:00 - 04:00 · 寅时 (黎明破晓)' },
+  { hour: 4, label: '04:00 - 05:00 · 寅时 (破晓拂晓)' },
+  { hour: 5, label: '05:00 - 06:00 · 卯时 (清晨日出)' },
+  { hour: 6, label: '06:00 - 07:00 · 卯时 (朝阳初升)' },
+  { hour: 7, label: '07:00 - 08:00 · 辰时 (早晨朝食)' },
+  { hour: 8, label: '08:00 - 09:00 · 辰时 (早市生辉)' },
+  { hour: 9, label: '09:00 - 10:00 · 巳时 (上午隅中)' },
+  { hour: 10, label: '10:00 - 11:00 · 巳时 (上午向荣)' },
+  { hour: 11, label: '11:00 - 12:00 · 午时 (正午日中)' },
+  { hour: 12, label: '12:00 - 13:00 · 午时 (日正当空)' },
+  { hour: 13, label: '13:00 - 14:00 · 未时 (午后日昳)' },
+  { hour: 14, label: '14:00 - 15:00 · 未时 (下午日昃)' },
+  { hour: 15, label: '15:00 - 16:00 · 申时 (下午晡时)' },
+  { hour: 16, label: '16:00 - 17:00 · 申时 (日入夕阳)' },
+  { hour: 17, label: '17:00 - 18:00 · 酉时 (傍晚黄昏)' },
+  { hour: 18, label: '18:00 - 19:00 · 酉时 (日落西山)' },
+  { hour: 19, label: '19:00 - 20:00 · 戌时 (初更黄昏)' },
+  { hour: 20, label: '20:00 - 21:00 · 戌时 (万家灯火)' },
+  { hour: 21, label: '21:00 - 22:00 · 亥时 (人定入定)' },
+  { hour: 22, label: '22:00 - 23:00 · 亥时 (深夜定夜)' },
+  { hour: 23, label: '23:00 - 24:00 · 晚子时 (深夜初更 · 夜子时)' },
 ];
 
 export const BirthInputModal: React.FC<BirthInputModalProps> = ({
@@ -116,6 +127,13 @@ export const BirthInputModal: React.FC<BirthInputModalProps> = ({
   currentInput,
 }) => {
   const [formData, setFormData] = useState<BirthInput>(currentInput);
+
+  // 每次打开弹窗或外部命盘切换时，确保表单与当前状态完全同步
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(currentInput);
+    }
+  }, [isOpen, currentInput]);
 
   if (!isOpen) return null;
 
@@ -324,10 +342,10 @@ export const BirthInputModal: React.FC<BirthInputModalProps> = ({
               </div>
               <select
                 value={formData.hour}
-                onChange={(e) => setFormData({ ...formData, hour: parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, hour: Number(e.target.value) })}
                 className="w-full px-3 py-2 bg-white border border-[#d5be9e] rounded text-sm focus:outline-none focus:border-[#a22d1b]"
               >
-                {SHI_CHEN.map((sc) => (
+                {HOUR_OPTIONS.map((sc) => (
                   <option key={sc.hour} value={sc.hour}>
                     {sc.label}
                   </option>

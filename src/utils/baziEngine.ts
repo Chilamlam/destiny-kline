@@ -271,7 +271,7 @@ export function calculateBaziChart(input: BirthInput): BaziChart {
     xiYongShen,
     jiShen,
     zodiac: lunar.getYearShengXiao(),
-    solarBirth: `${solar.getYear()}年${solar.getMonth()}月${solar.getDay()}日 ${input.hour === 23 ? '晚子时 (23:00-24:00)' : input.hour === 0 ? '早子时 (00:00-01:00)' : `${solar.getHour()}时`}`,
+    solarBirth: `${solar.getYear()}年${solar.getMonth()}月${solar.getDay()}日 ${input.hour === 23 ? '晚子时 (23:00-24:00)' : input.hour === 0 ? '早子时 (00:00-01:00)' : `${String(solar.getHour()).padStart(2, '0')}:00 (${eightChar.getTimeZhi()}时)`}`,
     lunarBirth: `${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()} ${eightChar.getTimeZhi()}时${input.hour === 23 ? '(夜子)' : input.hour === 0 ? '(晨子)' : ''}`,
     daYun,
     startYunAge

@@ -65,7 +65,7 @@ export const App: React.FC = () => {
               <span className="chinese-stamp text-xs">命盘档案</span>
               <span className="font-bold text-[#352b20] text-sm">{birthInput.name || '命主'}</span>
               <span className="text-[#8c7a6b]">({birthInput.gender === 'male' ? '乾造·男' : '坤造·女'})</span>
-              <span className="text-[#8c7a6b] hidden sm:inline">| 出生公历: {baziChart.solarBirth}</span>
+              <span className="text-[#8c7a6b] text-xs">| 公历: {baziChart.solarBirth}</span>
               <span className="text-[#b8860b] font-medium hidden md:inline">
                 | 星座: {astrologyProfile.sunSign.symbol} {astrologyProfile.sunSign.name}
               </span>
